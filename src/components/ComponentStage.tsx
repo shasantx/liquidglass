@@ -38,12 +38,15 @@ const ComponentStageInner: React.FC<ComponentStageProps> = ({
   children,
 }) => {
   const [view, setView] = useState<'preview' | 'code'>('preview');
+  const [codeTabIdx, setCodeTabIdx] = useState(0); // 0 = React / TSX, 1 = HTML + CSS
   const [backdrop, setBackdrop] = useState<BackdropTheme>(defaultBackdrop);
   const [quickCopied, setQuickCopied] = useState(false);
 
+  const copyingReact = codeTabIdx === 0;
+
   const quickCopy = async () => {
     try {
-      await navigator.clipboard.writeText(htmlCss);
+      await navigator.clipboard.writeText(copyingReact ? react : htmlCss);
       setQuickCopied(true);
       setTimeout(() => setQuickCopied(false), 1600);
     } catch {
@@ -59,12 +62,19 @@ const ComponentStageInner: React.FC<ComponentStageProps> = ({
         {view === 'preview' ? (
           <GlassStage
             scene={mapBackdropToScene(backdrop)}
-            className={`stage-viewport ${isLightBackdrop ? 'stage-tone-light' : 'stage-tone-dark'}`}
+            tone={isLightBackdrop ? 'light' : 'dark'}
+            className="stage-viewport"
           >
             <div className="stage-foreground">{children}</div>
           </GlassStage>
         ) : (
-          <CodeBlock htmlCss={htmlCss} react={react} title={name} />
+          <CodeBlock
+            htmlCss={htmlCss}
+            react={react}
+            title={name}
+            activeTabIndex={codeTabIdx}
+            onTabChange={(idx) => setCodeTabIdx(idx)}
+          />
         )}
       </div>
 
@@ -123,10 +133,10 @@ const ComponentStageInner: React.FC<ComponentStageProps> = ({
             type="button"
             className={`quick-copy-pill ${quickCopied ? 'is-copied' : ''}`}
             onClick={quickCopy}
-            title="Copy HTML + CSS"
+            title={copyingReact ? 'Copy React / TSX snippet' : 'Copy HTML + CSS snippet'}
           >
             {quickCopied ? <Check size={13} /> : <Copy size={13} />}
-            <span>{quickCopied ? 'Copied' : 'Copy'}</span>
+            <span>{quickCopied ? 'Copied' : copyingReact ? 'Copy TSX' : 'Copy CSS'}</span>
           </button>
         </div>
       </div>

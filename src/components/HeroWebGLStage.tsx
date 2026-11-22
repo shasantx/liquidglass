@@ -1,9 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Aperture,
+  ArrowRight,
   Blend,
+  Check,
   Contrast,
+  Copy,
+  Cpu,
   Droplets,
+  ImagePlus,
   Layers,
   Move,
   Music2,
@@ -11,9 +16,15 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Sun,
+  Terminal,
+  X,
 } from 'lucide-react';
-import { GlassPreset, useGlassSettings } from '../context/GlassSettingsContext';
-import { WallpaperScene } from '../lib/webglGlassRenderer';
+import {
+  GlassPreset,
+  GlassRenderMode,
+  useGlassSettings,
+} from '../context/GlassSettingsContext';
+import { sharedGlassEngine, WallpaperScene } from '../lib/webglGlassRenderer';
 import { GlassStage, GlassStageHandle } from './GlassStage';
 import { LiquidGlass } from './LiquidGlass';
 import { MediaPlayerDemo } from '../demos/MediaPlayerDemo';
@@ -35,15 +46,34 @@ const HERO_PRESETS: { id: GlassPreset; label: string }[] = [
   { id: 'prism', label: 'Prism' },
 ];
 
-export const HeroWebGLStage: React.FC = () => {
+const RENDER_TIERS: { id: GlassRenderMode; label: string }[] = [
+  { id: 'webgl', label: 'WebGL2' },
+  { id: 'svg', label: 'SVG DOM' },
+  { id: 'css', label: 'CSS' },
+];
+
+const INSTALL_CMD = 'npm install glasskit-liquid-glass';
+
+interface HeroWebGLStageProps {
+  onOpenDocs?: () => void;
+}
+
+export const HeroWebGLStage: React.FC<HeroWebGLStageProps> = ({ onOpenDocs }) => {
   const { settings, updateSetting, applyPreset, resetSettings } = useGlassSettings();
   const stageHandleRef = useRef<GlassStageHandle>(null);
   const heroWrapRef = useRef<HTMLDivElement>(null);
   const dragElRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [scene, setScene] = useState<WallpaperScene>('tahoe');
+  const [customBgUrl, setCustomBgUrl] = useState<string | null>(null);
+  const [customTone, setCustomTone] = useState<'dark' | 'light'>('dark');
+  const [dragOverFile, setDragOverFile] = useState(false);
+
   const [heroMode, setHeroMode] = useState<HeroMode>('player');
   const [activePreset, setActivePreset] = useState<GlassPreset | null>('clear');
+  const [installCopied, setInstallCopied] = useState(false);
+  const [configCopied, setConfigCopied] = useState(false);
 
   const [draggingCard, setDraggingCard] = useState(false);
   const draggingCardRef = useRef(false);
@@ -59,20 +89,49 @@ export const HeroWebGLStage: React.FC = () => {
   const animRafRef = useRef<number>(0);
   const lastFrameTimeRef = useRef<number>(0);
 
+  // Clean up object URLs on replace/unmount
+  useEffect(() => {
+    return () => {
+      if (customBgUrl) {
+        sharedGlassEngine.evictImage(customBgUrl);
+        URL.revokeObjectURL(customBgUrl);
+      }
+    };
+  }, [customBgUrl]);
+
+  const applyCustomImageFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const nextUrl = URL.createObjectURL(file);
+    setCustomBgUrl((prev) => {
+      if (prev) {
+        sharedGlassEngine.evictImage(prev);
+        URL.revokeObjectURL(prev);
+      }
+      return nextUrl;
+    });
+  };
+
+  const clearCustomBg = () => {
+    setCustomBgUrl((prev) => {
+      if (prev) {
+        sharedGlassEngine.evictImage(prev);
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+  };
+
   // Device refresh-rate independent (60Hz / 120Hz / 144Hz / 240Hz) exponential smoothing loop
-  // Drives both the liquid droplet AND zero-re-render GPU card drag at native VSync!
   const runMotionLoop = (now: number) => {
     animRafRef.current = 0;
     const prev = lastFrameTimeRef.current || now - 16.667;
     lastFrameTimeRef.current = now;
     const dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000));
 
-    // Frame-rate independent exponential smoothing factors
     const dropPosEase = 1 - Math.exp(-15 * dt);
     const dropFadeEase = 1 - Math.exp(-13 * dt);
     const cardEase = 1 - Math.exp(-(draggingCardRef.current ? 28 : 16) * dt);
 
-    // 1. Update liquid droplet
     const dTarget = dropTargetRef.current;
     const dCurr = dropCurrRef.current;
     const targetAlpha = dTarget.active ? 1 : 0;
@@ -80,7 +139,6 @@ export const HeroWebGLStage: React.FC = () => {
     dCurr.y += (dTarget.y - dCurr.y) * dropPosEase;
     dCurr.alpha += (targetAlpha - dCurr.alpha) * dropFadeEase;
 
-    // 2. Update hero card transform directly on GPU layer (0 React re-renders during drag)
     const cTarget = cardTargetRef.current;
     const cCurr = cardCurrRef.current;
     cCurr.x += (cTarget.x - cCurr.x) * cardEase;
@@ -227,20 +285,118 @@ export const HeroWebGLStage: React.FC = () => {
     updateSetting(key, val);
   };
 
-  const isLightScene = scene === 'light';
+  const copyInstallCmd = async () => {
+    try {
+      await navigator.clipboard.writeText(INSTALL_CMD);
+      setInstallCopied(true);
+      setTimeout(() => setInstallCopied(false), 1600);
+    } catch {
+      // ignore
+    }
+  };
+
+  const copyOpticalConfig = async () => {
+    const snippet = `<GlassSettingsProvider
+  defaultSettings={{
+    refraction: ${Number(settings.refraction.toFixed(2))},
+    blur: ${Number(settings.blur.toFixed(1))},
+    aberration: ${Number(settings.aberration.toFixed(2))},
+    specular: ${Number(settings.specular.toFixed(2))},
+    bezelWidth: ${settings.bezelWidth},
+    renderMode: '${settings.renderMode === 'auto' ? 'webgl' : settings.renderMode}',
+  }}
+>
+  <GlassStage scene="${scene}"${customBgUrl ? ' backgroundImage="/your-wallpaper.jpg"' : ''} style={{ height: 420 }}>
+    <LiquidGlass radius={32} variant="clear">
+      {/* Your UI */}
+    </LiquidGlass>
+  </GlassStage>
+</GlassSettingsProvider>`;
+
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setConfigCopied(true);
+      setTimeout(() => setConfigCopied(false), 1800);
+    } catch {
+      // ignore
+    }
+  };
+
+  const activeTier: GlassRenderMode =
+    settings.renderMode === 'auto' ? 'webgl' : settings.renderMode;
+  const resolvedTone: 'dark' | 'light' = customBgUrl
+    ? customTone
+    : scene === 'light'
+    ? 'light'
+    : 'dark';
 
   return (
     <section id="optical-lab" className="hero-section">
       <div className="hero-header">
+        <div className="hero-version-pill hero-bloom-1">
+          <span className="hero-version-dot" />
+          <span>GlassKit v2.0 · Publishable React Package &amp; WebGL2 Engine</span>
+        </div>
+
         <h1 className="hero-bloom-1">Liquid Glass</h1>
         <p className="hero-lead hero-bloom-2">
           Physical Snell refraction, chromatic dispersion, and specular depth — calibrated to
-          iOS 26 and macOS Tahoe across every UI component.
+          iOS 26 and macOS Tahoe across 10 drop-in React components.
         </p>
+
+        {/* 1-click npm install command bar + Docs CTA */}
+        <div className="hero-install-row hero-bloom-2">
+          <div className="hero-install-pill">
+            <Terminal size={14} className="hero-install-icon" aria-hidden="true" />
+            <code>{INSTALL_CMD}</code>
+            <button
+              type="button"
+              className={`hero-install-copy ${installCopied ? 'is-copied' : ''}`}
+              onClick={copyInstallCmd}
+              aria-label="Copy install command"
+            >
+              {installCopied ? <Check size={13} /> : <Copy size={13} />}
+              <span>{installCopied ? 'Copied' : 'Copy'}</span>
+            </button>
+          </div>
+
+          {onOpenDocs && (
+            <button type="button" className="hero-docs-cta" onClick={onOpenDocs}>
+              <span>Get Started</span>
+              <ArrowRight size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Flagship Full-HD Interactive Stage */}
-      <div className="hero-studio-frame hero-bloom-3" ref={heroWrapRef}>
+      <div
+        className={`hero-studio-frame hero-bloom-3 ${dragOverFile ? 'is-file-dragover' : ''}`}
+        ref={heroWrapRef}
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes('Files')) {
+            e.preventDefault();
+            setDragOverFile(true);
+          }
+        }}
+        onDragLeave={() => setDragOverFile(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOverFile(false);
+          applyCustomImageFile(e.dataTransfer.files?.[0]);
+        }}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            applyCustomImageFile(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
+
         <div className="hero-toolbar">
           <div className="toolbar-cluster">
             <span className="toolbar-icon-label" aria-hidden="true">
@@ -251,12 +407,43 @@ export const HeroWebGLStage: React.FC = () => {
                 <button
                   key={w.id}
                   type="button"
-                  className={scene === w.id ? 'is-active' : ''}
-                  onClick={() => setScene(w.id)}
+                  className={!customBgUrl && scene === w.id ? 'is-active' : ''}
+                  onClick={() => {
+                    clearCustomBg();
+                    setScene(w.id);
+                  }}
                 >
                   {w.label}
                 </button>
               ))}
+              <button
+                type="button"
+                className={customBgUrl ? 'is-active' : ''}
+                onClick={() => fileInputRef.current?.click()}
+                title="Upload your own background image or drop it onto the stage"
+              >
+                <ImagePlus size={12} />
+                <span>{customBgUrl ? 'Custom' : 'Upload'}</span>
+              </button>
+              {customBgUrl && (
+                <button
+                  type="button"
+                  onClick={() => setCustomTone((t) => (t === 'dark' ? 'light' : 'dark'))}
+                  title="Switch text contrast for your custom background"
+                >
+                  {customTone === 'dark' ? 'Light Ink' : 'Dark Ink'}
+                </button>
+              )}
+              {customBgUrl && (
+                <button
+                  type="button"
+                  onClick={clearCustomBg}
+                  aria-label="Remove custom background"
+                  title="Remove custom image"
+                >
+                  <X size={12} />
+                </button>
+              )}
             </div>
           </div>
 
@@ -303,7 +490,9 @@ export const HeroWebGLStage: React.FC = () => {
         <GlassStage
           ref={stageHandleRef}
           scene={scene}
-          className={`hero-stage-viewport ${isLightScene ? 'stage-tone-light' : 'stage-tone-dark'}`}
+          backgroundImage={customBgUrl ?? undefined}
+          tone={resolvedTone}
+          className="hero-stage-viewport"
           onStagePointerMove={handleStagePointerMove}
           onStagePointerLeave={handleStagePointerLeave}
         >
@@ -334,13 +523,20 @@ export const HeroWebGLStage: React.FC = () => {
           <div className="hero-stage-hint" aria-hidden="true">
             <Move size={13} />
             <span>
-              Drag card to refract
-              <span className="hero-hint-desktop"> · Hover stage to fuse liquid droplet</span>
+              {dragOverFile
+                ? 'Drop image to test Liquid Glass on your photo'
+                : 'Drag card to refract'}
+              {!dragOverFile && (
+                <span className="hero-hint-desktop">
+                  {' '}
+                  · Hover to fuse droplet · Drop any image
+                </span>
+              )}
             </span>
           </div>
         </GlassStage>
 
-        {/* Precision Optical Inspector */}
+        {/* Precision Optical Inspector + Render Tier Switcher + Export Config */}
         <div className="optical-inspector">
           <div className="inspector-sliders">
             <label className="inspector-control">
@@ -429,20 +625,52 @@ export const HeroWebGLStage: React.FC = () => {
             </label>
           </div>
 
-          <button
-            type="button"
-            className="inspector-reset"
-            onClick={() => {
-              setActivePreset('clear');
-              cardTargetRef.current = { x: 0, y: 0 };
-              wakeMotion();
-              resetSettings();
-            }}
-            title="Reset to iOS 26 defaults"
-          >
-            <RotateCcw size={13} />
-            <span>Reset</span>
-          </button>
+          <div className="inspector-actions-row">
+            <div className="inspector-tier-wrap">
+              <span className="inspector-tier-label">
+                <Cpu size={12} /> Engine
+              </span>
+              <div className="toolbar-group" role="group" aria-label="Optical rendering engine tier">
+                {RENDER_TIERS.map((tier) => (
+                  <button
+                    key={tier.id}
+                    type="button"
+                    className={activeTier === tier.id ? 'is-active' : ''}
+                    onClick={() => updateSetting('renderMode', tier.id)}
+                  >
+                    {tier.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="inspector-btn-group">
+              <button
+                type="button"
+                className={`inspector-reset inspector-export-btn ${configCopied ? 'is-copied' : ''}`}
+                onClick={copyOpticalConfig}
+                title="Copy current optical settings as React JSX"
+              >
+                {configCopied ? <Check size={13} /> : <Copy size={13} />}
+                <span>{configCopied ? 'Copied Config' : 'Copy Config'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="inspector-reset"
+                onClick={() => {
+                  setActivePreset('clear');
+                  cardTargetRef.current = { x: 0, y: 0 };
+                  wakeMotion();
+                  resetSettings();
+                }}
+                title="Reset to iOS 26 defaults"
+              >
+                <RotateCcw size={13} />
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -458,7 +686,7 @@ export const HeroWebGLStage: React.FC = () => {
         </div>
         <div className="pillar-item">
           <Layers size={15} />
-          <span>10 copy-ready HTML, CSS &amp; React components</span>
+          <span>10 installable React &amp; CSS Liquid Glass components</span>
         </div>
       </div>
     </section>

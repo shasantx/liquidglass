@@ -1,0 +1,102 @@
+// GlassKit — Apple iOS 26 & macOS Tahoe Liquid Glass UI Library
+// Import styles once in your app: import 'glasskit-liquid-glass/styles.css'
+
+// Core optical engines & settings
+export {
+  sharedGlassEngine,
+  DEFAULT_SCENE_IMAGE_URLS,
+  SCENE_CSS_FALLBACKS,
+} from './core/webglGlassRenderer';
+export type {
+  WallpaperScene,
+  GlassVariantId,
+  GlassRectDescriptor,
+  DropletDescriptor,
+  StageRenderOptions,
+} from './core/webglGlassRenderer';
+
+export {
+  generateLiquidGlassMaps,
+  supportsSvgBackdropFilter,
+} from './core/liquidGlassEngine';
+export type { GlassMapParams, GeneratedGlassMaps } from './core/liquidGlassEngine';
+
+export {
+  GlassSettingsProvider,
+  useGlassSettings,
+  DEFAULT_GLASS_SETTINGS,
+} from './core/GlassSettingsContext';
+export type {
+  BackdropTheme,
+  SiteTheme,
+  GlassPreset,
+  GlassRenderMode,
+  GlassSettings,
+  GlassSettingsContextValue,
+  GlassSettingsProviderProps,
+} from './core/GlassSettingsContext';
+
+// Optical primitives
+export { GlassStage, useGlassStage } from './primitives/GlassStage';
+export type {
+  GlassStageProps,
+  GlassStageHandle,
+  GlassStageContextValue,
+  RegisteredGlassElement,
+} from './primitives/GlassStage';
+
+export { LiquidGlass } from './primitives/LiquidGlass';
+export type { LiquidGlassProps } from './primitives/LiquidGlass';
+
+// 10 Interactive iOS 26 & macOS Tahoe UI Components
+export { GlassTabBar } from './components/GlassTabBar';
+export type { GlassTabBarProps, GlassTabItem } from './components/GlassTabBar';
+
+export { GlassSwitch } from './components/GlassSwitch';
+export type { GlassSwitchProps } from './components/GlassSwitch';
+
+export { GlassSlider } from './components/GlassSlider';
+export type { GlassSliderProps } from './components/GlassSlider';
+
+export { GlassSegmentedControl } from './components/GlassSegmentedControl';
+export type {
+  GlassSegmentedControlProps,
+  GlassSegmentOption,
+} from './components/GlassSegmentedControl';
+
+export { GlassButton, GlassButtonGroup, GlassIconButton } from './components/GlassButton';
+export type {
+  GlassButtonProps,
+  GlassButtonGroupProps,
+  GlassButtonGroupAction,
+  GlassIconButtonProps,
+} from './components/GlassButton';
+
+export { GlassControlCenter, GlassVerticalSlider } from './components/GlassControlCenter';
+export type {
+  GlassControlCenterProps,
+  GlassConnectivityOrb,
+  GlassVerticalSliderProps,
+} from './components/GlassControlCenter';
+
+export { GlassMediaPlayer } from './components/GlassMediaPlayer';
+export type { GlassMediaPlayerProps, GlassMediaTrack } from './components/GlassMediaPlayer';
+
+export { GlassContextMenu } from './components/GlassContextMenu';
+export type {
+  GlassContextMenuProps,
+  GlassContextQuickAction,
+  GlassContextMenuItem,
+} from './components/GlassContextMenu';
+
+export { GlassNotificationStack } from './components/GlassNotificationStack';
+export type {
+  GlassNotificationStackProps,
+  GlassNotificationItem,
+} from './components/GlassNotificationStack';
+
+export { GlassAlertSheet } from './components/GlassAlertSheet';
+export type { GlassAlertSheetProps } from './components/GlassAlertSheet';
+
+export { GlassDock } from './components/GlassDock';
+export type { GlassDockProps, GlassDockItem } from './components/GlassDock';

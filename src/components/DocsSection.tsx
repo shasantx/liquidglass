@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -29,31 +29,45 @@ const DOC_TABS: { id: DocTabId; label: string; icon: LucideIcon }[] = [
   { id: 'engine', label: 'Core Engine', icon: Code2 },
 ];
 
-const INSTALL_SNIPPET = `# 1. Clone the repository
+const VALID_TAB_IDS = new Set<DocTabId>(DOC_TABS.map((t) => t.id));
+
+function readTabFromHash(): DocTabId {
+  if (typeof window === 'undefined') return 'overview';
+  const raw = window.location.hash.replace(/^#/, '') as DocTabId;
+  return VALID_TAB_IDS.has(raw) ? raw : 'overview';
+}
+
+const NPM_INSTALL_SNIPPET = `# Install the GlassKit React + WebGL2 package (v2.0)
+npm install glasskit-liquid-glass
+
+# Or develop the showcase & library locally
 git clone https://github.com/shasantx/liquidglass.git
 cd liquidglass
-
-# 2. Install dependencies
 npm install
+npm run dev       # Start interactive studio
+npm run build:lib # Build publishable package -> dist-lib/`;
 
-# 3. Start the interactive studio (Vite HMR)
-npm run dev
-
-# 4. Type-check & build for production
-npm run build`;
-
-const REACT_USAGE_SNIPPET = `import { GlassSettingsProvider } from './context/GlassSettingsContext';
-import { GlassStage } from './components/GlassStage';
-import { LiquidGlass } from './components/LiquidGlass';
+const REACT_USAGE_SNIPPET = `import 'glasskit-liquid-glass/styles.css';
+import {
+  GlassSettingsProvider,
+  GlassStage,
+  LiquidGlass,
+  GlassButton,
+} from 'glasskit-liquid-glass';
 
 export function MyGlassSurface() {
   return (
     <GlassSettingsProvider>
-      <GlassStage scene="tahoe" className="stage-tone-dark" style={{ height: 420 }}>
-        <LiquidGlass radius={32} bezelWidth={22} variant="clear">
+      <GlassStage
+        backgroundImage="/your-wallpaper.jpg"
+        tone="dark"
+        style={{ height: 420, borderRadius: 28 }}
+      >
+        <LiquidGlass radius={32} bezelWidth={22} refraction={1.05} variant="clear">
           <div style={{ padding: '24px 28px' }}>
             <h3>Liquid Glass Card</h3>
             <p>Real-time Snell refraction, RGB dispersion, and Fresnel specular depth.</p>
+            <GlassButton variant="prominent">Get Started</GlassButton>
           </div>
         </LiquidGlass>
       </GlassStage>
@@ -75,7 +89,7 @@ const HTML_USAGE_SNIPPET = `<!-- 1. Include the Liquid Glass core CSS once -->
 }
 </style>`;
 
-const SETTINGS_HOOK_SNIPPET = `import { useGlassSettings } from './context/GlassSettingsContext';
+const SETTINGS_HOOK_SNIPPET = `import { useGlassSettings } from 'glasskit-liquid-glass';
 
 export function OpticalPresetBar() {
   const { settings, updateSetting, applyPreset, resetSettings } = useGlassSettings();
@@ -84,6 +98,7 @@ export function OpticalPresetBar() {
     <div>
       <button onClick={() => applyPreset('clear')}>Clear</button>
       <button onClick={() => applyPreset('crystal')}>Crystal</button>
+      <button onClick={() => updateSetting('renderMode', 'svg')}>Preview SVG Mode</button>
       <button onClick={() => updateSetting('siteTheme', settings.siteTheme === 'dark' ? 'light' : 'dark')}>
         Toggle Theme
       </button>
@@ -121,7 +136,26 @@ interface DocsSectionProps {
 }
 
 export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) => {
-  const [activeTab, setActiveTab] = useState<DocTabId>('overview');
+  const [activeTab, setActiveTab] = useState<DocTabId>(readTabFromHash);
+
+  useEffect(() => {
+    const onHashChange = () => setActiveTab(readTabFromHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  useEffect(() => {
+    const label = DOC_TABS.find((t) => t.id === activeTab)?.label ?? 'Documentation';
+    document.title = `${label} — GlassKit v2.0 Docs`;
+  }, [activeTab]);
+
+  const selectTab = (tabId: DocTabId) => {
+    setActiveTab(tabId);
+    const nextUrl = `/docs#${tabId}`;
+    if (window.location.pathname + window.location.hash !== nextUrl) {
+      window.history.replaceState({}, '', nextUrl);
+    }
+  };
 
   return (
     <section id="docs" className="docs-section docs-page blur-morph-in">
@@ -141,22 +175,20 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
             </a>
           )}
           <span className="docs-eyebrow">
-            <Code2 size={13} /> Documentation &amp; Setup Guides
+            <Code2 size={13} /> GlassKit v2.0 Documentation &amp; API
           </span>
         </div>
 
         <div className="docs-header-copy">
           <h1>GlassKit Documentation</h1>
           <p>
-            Complete architecture overview, step-by-step React &amp; Vanilla setup guides,
-            component props reference, Snell optical physics calibration, high-refresh-rate
-            performance guidelines, and drop-in shader source.
+            Installable React package guides, custom background stage setup, all 10 reusable
+            component APIs, Snell optical physics calibration, and drop-in shader source.
           </p>
         </div>
       </div>
 
       <div className="docs-layout">
-        {/* Sticky sidebar on desktop, horizontal pill bar on tablet/mobile */}
         <aside className="docs-sidebar" aria-label="Documentation topics">
           <div className="docs-nav-list" role="tablist">
             {DOC_TABS.map((tab) => {
@@ -168,7 +200,7 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                   role="tab"
                   aria-selected={activeTab === tab.id}
                   className={`docs-nav-btn ${activeTab === tab.id ? 'is-active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => selectTab(tab.id)}
                 >
                   <Icon size={15} />
                   <span>{tab.label}</span>
@@ -178,47 +210,46 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
           </div>
         </aside>
 
-        {/* Active documentation panel */}
         <div key={activeTab} className="docs-content blur-morph-in" role="tabpanel">
           {activeTab === 'overview' && (
             <div className="docs-stack">
               <div className="doc-block">
                 <h3>3-Tier Optical Architecture</h3>
                 <p>
-                  GlassKit is designed so every surface renders authentic Apple iOS 26 &amp; macOS
-                  Tahoe Liquid Glass across all browsers without hitting WebGL context limits or
-                  draining battery when idle.
+                  GlassKit v2.0 ships as a publishable React library with zero required icon or
+                  WebGL framework dependencies. Every surface renders authentic Apple iOS 26 &amp;
+                  macOS Tahoe Liquid Glass without hitting WebGL context limits or draining idle GPU.
                 </p>
                 <div className="doc-cards-grid">
                   <div className="doc-mini-card">
                     <strong>1. Shared WebGL2 Engine</strong>
                     <p>
-                      A single offscreen WebGL2 context renders all stages on the page, baking a
-                      2-pass separable 17-tap Gaussian frost map per wallpaper and blitting directly
-                      to each stage canvas only when geometry or hover state changes (0% idle GPU).
+                      A single offscreen WebGL2 context renders all stages on the page with custom
+                      background images or calibrated scenes, 2-pass separable 17-tap Gaussian frost
+                      baking, per-element optical overrides, and 0% idle GPU.
                     </p>
                   </div>
                   <div className="doc-mini-card">
                     <strong>2. SVG DOM Displacement</strong>
                     <p>
-                      For standalone DOM surfaces in Chromium, <code>liquidGlassEngine.ts</code>{' '}
-                      generates quantized 2D RG displacement maps using Snell&apos;s law along a
-                      convex squircle bevel for live <code>backdrop-filter: url(...)</code> lensing.
+                      For standalone DOM surfaces in Chromium, <code>&lt;LiquidGlass /&gt;</code>{' '}
+                      automatically generates quantized 2D RG Snell displacement maps for live{' '}
+                      <code>backdrop-filter: url(#...)</code> edge refraction.
                     </p>
                   </div>
                   <div className="doc-mini-card">
                     <strong>3. Pure CSS Fallback</strong>
                     <p>
-                      When used outside a <code>&lt;GlassStage&gt;</code> or on devices without
-                      WebGL2, <code>&lt;LiquidGlass&gt;</code> automatically degrades to translucent
-                      multi-layered <code>backdrop-filter</code> glass with directional Fresnel rims.
+                      When used in <code>renderMode=&quot;css&quot;</code> or on devices without
+                      WebGL2, <code>&lt;LiquidGlass /&gt;</code> degrades to multi-layered
+                      translucent <code>backdrop-filter</code> glass with Fresnel rim hairlines.
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="doc-block">
-                <h3>Project Structure</h3>
+                <h3>Package &amp; Workspace Structure</h3>
                 <div className="doc-table-wrap">
                   <table className="doc-table">
                     <thead>
@@ -229,28 +260,24 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                     </thead>
                     <tbody>
                       <tr>
-                        <td><code>src/lib/webglGlassRenderer.ts</code></td>
-                        <td>Shared offscreen WebGL2 renderer, GLSL Snell refraction shader, Gaussian frost baker, and wallpaper loader.</td>
+                        <td><code>src/glasskit/index.ts</code></td>
+                        <td>Main npm entry point exporting primitives, optical engines, and all 10 UI components.</td>
                       </tr>
                       <tr>
-                        <td><code>src/lib/liquidGlassEngine.ts</code></td>
-                        <td>Quantized SVG displacement-map generator &amp; Chromium backdrop-filter feature detection.</td>
+                        <td><code>src/glasskit/core/*</code></td>
+                        <td>Shared WebGL2 renderer (custom image URLs + <code>uOptics[12]</code>), SVG Snell map generator, and persistent settings provider.</td>
                       </tr>
                       <tr>
-                        <td><code>src/components/GlassStage.tsx</code></td>
-                        <td>Stage context provider that tracks child <code>LiquidGlass</code> bounding boxes and drives burst-only GPU frames.</td>
+                        <td><code>src/glasskit/primitives/*</code></td>
+                        <td><code>&lt;GlassStage /&gt;</code> and <code>&lt;LiquidGlass /&gt;</code> supporting WebGL2, SVG DOM, and pure CSS tiers.</td>
                       </tr>
                       <tr>
-                        <td><code>src/components/LiquidGlass.tsx</code></td>
-                        <td>Primary glass primitive supporting both GPU-accelerated stage mode and pure-CSS fallback mode.</td>
+                        <td><code>src/glasskit/components/*</code></td>
+                        <td>10 prop-driven reusable React components with zero forced icon dependencies.</td>
                       </tr>
                       <tr>
-                        <td><code>src/context/GlassSettingsContext.tsx</code></td>
-                        <td>Global optical state (refraction, frost, bezel, specular, dispersion, saturation, site theme) and material presets.</td>
-                      </tr>
-                      <tr>
-                        <td><code>src/demos/*</code></td>
-                        <td>10 production-ready interactive iOS 26 &amp; macOS Tahoe UI demos (Tab Bar, Dock, Player, Control Center, etc.).</td>
+                        <td><code>src/glasskit/styles/glasskit.css</code></td>
+                        <td>Standalone library CSS emitted as <code>glasskit-liquid-glass/styles.css</code>.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -298,29 +325,27 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
           {activeTab === 'setup' && (
             <div className="docs-stack">
               <div className="doc-block">
-                <h3>1. Local Development &amp; Production Build</h3>
+                <h3>1. Install the Package</h3>
                 <p>
-                  Requires <strong>Node.js 18+</strong>. Runs on Vite 6 + React 18 + TypeScript 5
-                  with zero external WebGL frameworks.
+                  Requires <strong>React 18+</strong> and <strong>Node.js 18+</strong>. Zero external
+                  WebGL or icon library dependencies required.
                 </p>
                 <div className="doc-code-box">
                   <div className="doc-code-bar">
                     <span>Terminal</span>
-                    <CopyMiniBtn text={INSTALL_SNIPPET} />
+                    <CopyMiniBtn text={NPM_INSTALL_SNIPPET} />
                   </div>
-                  <pre><code>{INSTALL_SNIPPET}</code></pre>
+                  <pre><code>{NPM_INSTALL_SNIPPET}</code></pre>
                 </div>
               </div>
 
               <div className="doc-block">
-                <h3>2. Integrate into an Existing React / Next.js / Vite App</h3>
+                <h3>2. Use in React / Next.js / Vite</h3>
                 <p>
-                  Copy five lightweight files into your project: <code>webglGlassRenderer.ts</code>,{' '}
-                  <code>liquidGlassEngine.ts</code>, <code>GlassSettingsContext.tsx</code>,{' '}
-                  <code>GlassStage.tsx</code>, and <code>LiquidGlass.tsx</code>, plus the wallpaper
-                  assets in <code>public/wallpapers/</code>. Wrap your app in{' '}
-                  <code>&lt;GlassSettingsProvider&gt;</code> and mount any number of{' '}
-                  <code>&lt;LiquidGlass&gt;</code> surfaces inside a <code>&lt;GlassStage&gt;</code>.
+                  Import <code>glasskit-liquid-glass/styles.css</code> once at your app root, wrap
+                  your app in <code>&lt;GlassSettingsProvider&gt;</code>, and pass any custom{' '}
+                  <code>backgroundImage</code> URL (or built-in <code>scene</code>) to{' '}
+                  <code>&lt;GlassStage&gt;</code>.
                 </p>
                 <div className="doc-code-box">
                   <div className="doc-code-bar">
@@ -347,7 +372,7 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
               </div>
 
               <div className="doc-block">
-                <h3>4. Controlling Presets &amp; Theme Programmatically</h3>
+                <h3>4. Controlling Presets, Engine Tier &amp; Theme</h3>
                 <div className="doc-code-box">
                   <div className="doc-code-bar">
                     <span>useGlassSettings()</span>
@@ -384,7 +409,25 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                         <td><code>variant</code></td>
                         <td><code>&apos;clear&apos; | &apos;tinted&apos; | &apos;dark&apos; | &apos;prominent&apos;</code></td>
                         <td><code>&apos;clear&apos;</code></td>
-                        <td>Optical surface material: crystal clear, softly frosted tint, dark obsidian glass, or azure prominent CTA.</td>
+                        <td>Optical surface material: crystal clear, softly frosted tint, dark obsidian glass, or azure CTA.</td>
+                      </tr>
+                      <tr>
+                        <td><code>refraction</code></td>
+                        <td><code>number</code></td>
+                        <td>Context (<code>0.88</code>)</td>
+                        <td>Per-surface Snell meniscus refraction multiplier (<code>0</code> to <code>1.8</code>).</td>
+                      </tr>
+                      <tr>
+                        <td><code>blur</code></td>
+                        <td><code>number</code></td>
+                        <td>Context (<code>3.4</code>)</td>
+                        <td>Per-surface interior optical frost depth (<code>0</code> to <code>6</code>).</td>
+                      </tr>
+                      <tr>
+                        <td><code>aberration</code></td>
+                        <td><code>number</code></td>
+                        <td>Context (<code>0.16</code>)</td>
+                        <td>Per-surface physical 3-channel RGB chromatic dispersion (<code>0</code> to <code>0.45</code>).</td>
                       </tr>
                       <tr>
                         <td><code>bezelWidth</code></td>
@@ -399,10 +442,10 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                         <td>Multiplier for Fresnel rim intensity and pointer-following studio catchlight.</td>
                       </tr>
                       <tr>
-                        <td><code>interactive</code></td>
-                        <td><code>boolean</code></td>
-                        <td><code>true</code></td>
-                        <td>Enables pointer-following specular glint across the glass surface on hover.</td>
+                        <td><code>renderMode</code></td>
+                        <td><code>&apos;auto&apos; | &apos;webgl&apos; | &apos;svg&apos; | &apos;css&apos;</code></td>
+                        <td><code>&apos;auto&apos;</code></td>
+                        <td>Explicitly select WebGL2 stage, SVG DOM displacement, or pure CSS fallback per surface.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -424,7 +467,27 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                       <tr>
                         <td><code>scene</code></td>
                         <td><code>&apos;tahoe&apos; | &apos;sunset&apos; | &apos;dark&apos; | &apos;light&apos; | &apos;prism&apos;</code></td>
-                        <td>Selects the Full-HD wallpaper scene baked into the stage&apos;s crisp and Gaussian-blurred textures.</td>
+                        <td>Built-in wallpaper scene baked into crisp &amp; Gaussian-blurred textures (default <code>&apos;tahoe&apos;</code>).</td>
+                      </tr>
+                      <tr>
+                        <td><code>backgroundImage</code></td>
+                        <td><code>string</code></td>
+                        <td>Any custom image URL (remote CORS image, local path, data URL, or uploaded blob URL).</td>
+                      </tr>
+                      <tr>
+                        <td><code>tone</code></td>
+                        <td><code>&apos;dark&apos; | &apos;light&apos;</code></td>
+                        <td>Controls optical contrast and typography color for dark or bright wallpapers.</td>
+                      </tr>
+                      <tr>
+                        <td><code>renderMode</code></td>
+                        <td><code>&apos;auto&apos; | &apos;webgl&apos; | &apos;svg&apos; | &apos;css&apos;</code></td>
+                        <td>Overrides rendering tier for all surfaces inside this stage.</td>
+                      </tr>
+                      <tr>
+                        <td><code>style / className</code></td>
+                        <td><code>HTMLDivElement</code> props</td>
+                        <td>All standard container props including <code>style</code>, <code>id</code>, and ARIA attributes.</td>
                       </tr>
                       <tr>
                         <td><code>ref.requestFrame()</code></td>
@@ -434,12 +497,12 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                       <tr>
                         <td><code>ref.requestBurst(ms)</code></td>
                         <td><code>(durationMs?: number) =&gt; void</code></td>
-                        <td>Runs native-refresh-rate redraws during CSS transitions (e.g. Dock hover spread or menu bloom).</td>
+                        <td>Runs native-refresh-rate redraws during CSS transitions (e.g. Dock hover spread).</td>
                       </tr>
                       <tr>
                         <td><code>ref.setDroplet(d)</code></td>
                         <td><code>(droplet: DropletDescriptor | null) =&gt; void</code></td>
-                        <td>Positions an organic smooth-minimum (<code>smin</code>) liquid droplet that fuses into the primary glass card.</td>
+                        <td>Positions an organic smooth-minimum (<code>smin</code>) liquid droplet that fuses into the primary card.</td>
                       </tr>
                     </tbody>
                   </table>
@@ -447,18 +510,18 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
               </div>
 
               <div className="doc-block">
-                <h3>Included Component Catalog (10 Components)</h3>
+                <h3>Exported React Components (10 Components)</h3>
                 <div className="doc-catalog-grid">
-                  <div><strong>Floating Tab Bar</strong><span>Swipeable &amp; hold-to-drag spring pill + expandable search orb</span></div>
-                  <div><strong>Liquid Toggle &amp; Slider</strong><span>Droplet-expanding switches + magnifying optical sliders</span></div>
-                  <div><strong>Segmented Control</strong><span>Swipeable multi-segment selector with label &amp; icon variants</span></div>
-                  <div><strong>Buttons &amp; Action Capsule</strong><span>Clear, prominent azure, tinted, grouped toolbar &amp; circular orbs</span></div>
-                  <div><strong>Control Center Modules</strong><span>2×2 connectivity grid, vertical drag sliders &amp; Focus mode pill</span></div>
-                  <div><strong>Now Playing Glass Card</strong><span>Interactive music player with scrubbing, track switching &amp; favorites</span></div>
-                  <div><strong>Context Menu &amp; Popover</strong><span>Spring-blooming popover with quick actions &amp; keyboard shortcuts</span></div>
-                  <div><strong>Notification Stack</strong><span>Collapsible/expandable depth-scaled banner stack with dismiss/restore</span></div>
-                  <div><strong>Alert Dialog Sheet</strong><span>Centered concentric-corner iOS 26 modal sheet with action pills</span></div>
-                  <div><strong>macOS Tahoe Dock</strong><span>Full icon set, utility divider, Downloads/Trash &amp; parabolic magnification</span></div>
+                  <div><strong><code>&lt;GlassTabBar /&gt;</code></strong><span>Swipeable floating tab bar + optional expandable search orb</span></div>
+                  <div><strong><code>&lt;GlassSwitch /&gt;</code> &amp; <code>&lt;GlassSlider /&gt;</code></strong><span>Droplet-expanding switches + magnifying optical sliders</span></div>
+                  <div><strong><code>&lt;GlassSegmentedControl /&gt;</code></strong><span>Swipeable multi-segment selector with label &amp; icon variants</span></div>
+                  <div><strong><code>&lt;GlassButton /&gt;</code> / <code>Group</code> / <code>Icon</code></strong><span>Clear, prominent azure, tinted, grouped toolbar &amp; circular orbs</span></div>
+                  <div><strong><code>&lt;GlassControlCenter /&gt;</code></strong><span>2×2 connectivity grid, vertical drag sliders &amp; Focus mode pill</span></div>
+                  <div><strong><code>&lt;GlassMediaPlayer /&gt;</code></strong><span>Interactive Now Playing card with scrubbing, track switching &amp; favorites</span></div>
+                  <div><strong><code>&lt;GlassContextMenu /&gt;</code></strong><span>Spring-blooming popover with quick actions &amp; keyboard shortcuts</span></div>
+                  <div><strong><code>&lt;GlassNotificationStack /&gt;</code></strong><span>Collapsible/expandable depth-scaled banner stack with dismiss/restore</span></div>
+                  <div><strong><code>&lt;GlassAlertSheet /&gt;</code></strong><span>Centered concentric-corner iOS 26 modal sheet with action pills</span></div>
+                  <div><strong><code>&lt;GlassDock /&gt;</code></strong><span>Parabolic hover magnification dock with optional utility divider</span></div>
                 </div>
               </div>
             </div>
@@ -544,11 +607,11 @@ export const DocsSection: React.FC<DocsSectionProps> = ({ onBackToShowcase }) =>
                 <h3>Light &amp; Dark Adaptive Architecture</h3>
                 <p>
                   GlassKit separates the <strong>site shell theme</strong> (<code>.theme-dark</code>{' '}
-                  and <code>.theme-light</code>) from each stage&apos;s <strong>optical tone</strong>{' '}
-                  (<code>.stage-tone-dark</code> for Tahoe, Sunset, Midnight, Spectrum and{' '}
-                  <code>.stage-tone-light</code> for Studio). Over bright wallpaper regions, the
-                  shader gently stabilizes highlight exposure while keeping clear translucency so
-                  both white and dark ink stay razor-legible.
+                  and <code>.theme-light</code>, persisted automatically in <code>localStorage</code>)
+                  from each stage&apos;s <strong>optical tone</strong> (<code>tone=&quot;dark&quot;</code>{' '}
+                  and <code>tone=&quot;light&quot;</code>). Over bright wallpaper regions, the shader
+                  stabilizes highlight exposure while keeping clear translucency so white and dark
+                  ink stay razor-legible.
                 </p>
               </div>
 

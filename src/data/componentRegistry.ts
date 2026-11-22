@@ -254,41 +254,24 @@ export const LIBRARY_COMPONENTS: LibraryComponentSpec[] = [
   cursor: pointer;
 }
 </style>`,
-    react: `import { useState } from 'react';
-import { Home, Compass, Radio, Library, Search } from 'lucide-react';
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { GlassStage, GlassTabBar } from 'glasskit-liquid-glass';
+import { Home, Compass, Radio, Library } from 'lucide-react';
 
-const TABS = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'new', label: 'New', icon: Compass },
-  { id: 'radio', label: 'Radio', icon: Radio },
-  { id: 'library', label: 'Library', icon: Library },
-];
-
-export function LiquidTabBar() {
-  const [active, setActive] = useState(0);
-
+export function FloatingTabBarExample() {
   return (
-    <div className="flex items-center gap-3">
-      <nav className="liquid-glass relative grid grid-cols-4 p-1.5 rounded-full">
-        <div
-          className="absolute top-1.5 left-1.5 h-[calc(100%-12px)] w-[calc(25%-3px)] rounded-full bg-white/30 shadow-inner transition-transform duration-500 ease-[cubic-bezier(0.32,1.25,0.48,1)]"
-          style={{ transform: \`translateX(\${active * 100}%)\` }}
-        />
-        {TABS.map(({ id, label, icon: Icon }, i) => (
-          <button
-            key={id}
-            onClick={() => setActive(i)}
-            className="relative z-10 flex flex-col items-center gap-1 px-4 py-2 text-xs font-medium text-white"
-          >
-            <Icon size={18} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
-      <button className="liquid-glass grid h-14 w-14 place-items-center rounded-full text-white">
-        <Search size={20} />
-      </button>
-    </div>
+    <GlassStage scene="tahoe" style={{ height: 320 }}>
+      <GlassTabBar
+        searchable
+        searchPlaceholder="Artists, songs, playlists..."
+        items={[
+          { id: 'home', label: 'Home', icon: <Home size={20} /> },
+          { id: 'new', label: 'New', icon: <Compass size={20} /> },
+          { id: 'radio', label: 'Radio', icon: <Radio size={20} /> },
+          { id: 'library', label: 'Library', icon: <Library size={20} /> },
+        ]}
+      />
+    </GlassStage>
   );
 }`,
   },
@@ -342,38 +325,31 @@ export function LiquidTabBar() {
   box-shadow: inset 0 1px 2px rgba(255,255,255,0.9), 0 8px 20px rgba(0,0,0,0.18);
 }
 </style>`,
-    react: `import { useState } from 'react';
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { useState } from 'react';
+import { GlassStage, LiquidGlass, GlassSwitch, GlassSlider } from 'glasskit-liquid-glass';
 
-export function LiquidSwitch({ label }: { label: string }) {
-  const [checked, setChecked] = useState(true);
-  const [pressed, setPressed] = useState(false);
+export function ToggleSliderExample() {
+  const [spatial, setSpatial] = useState(true);
+  const [volume, setVolume] = useState(64);
 
   return (
-    <label className="flex items-center justify-between gap-4">
-      <span className="text-sm font-medium text-white">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onPointerDown={() => setPressed(true)}
-        onPointerUp={() => setPressed(false)}
-        onPointerLeave={() => setPressed(false)}
-        onClick={() => setChecked((v) => !v)}
-        className={\`relative h-8 w-14 rounded-full transition-colors \${
-          checked ? 'bg-[#34C759]' : 'bg-white/25'
-        }\`}
-      >
-        <span
-          className={\`absolute top-0.5 left-0.5 h-7 w-8 rounded-full transition-all duration-300 \${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          } \${
-            pressed
-              ? 'scale-125 bg-white/30 backdrop-blur-sm ring-1 ring-white/80'
-              : 'bg-white shadow-md'
-          }\`}
+    <GlassStage scene="light" tone="light" style={{ height: 320 }}>
+      <LiquidGlass radius={26} bezelWidth={20} className="ios-controls-card">
+        <GlassSwitch
+          checked={spatial}
+          onChange={setSpatial}
+          label="Spatial Audio"
+          description="Hold or click to see droplet lens"
         />
-      </button>
-    </label>
+        <div className="ios-hairline" />
+        <GlassSlider
+          value={volume}
+          onChange={setVolume}
+          label="Output Volume"
+        />
+      </LiquidGlass>
+    </GlassStage>
   );
 }`,
   },
@@ -423,36 +399,26 @@ export function LiquidSwitch({ label }: { label: string }) {
   cursor: pointer;
 }
 </style>`,
-    react: `import { useState } from 'react';
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { useState } from 'react';
+import { GlassStage, GlassSegmentedControl } from 'glasskit-liquid-glass';
 
-export function LiquidSegmented({ options }: { options: string[] }) {
-  const [selected, setSelected] = useState(0);
+export function SegmentedExample() {
+  const [selected, setSelected] = useState(1);
 
   return (
-    <div
-      className="liquid-glass relative grid p-1 rounded-full"
-      style={{ gridTemplateColumns: \`repeat(\${options.length}, 1fr)\` }}
-      role="tablist"
-    >
-      <div
-        className="absolute top-1 left-1 h-[calc(100%-8px)] rounded-full bg-white/35 shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.32,1.25,0.48,1)]"
-        style={{
-          width: \`calc(\${100 / options.length}% - 2px)\`,
-          transform: \`translateX(\${selected * 100}%)\`,
-        }}
+    <GlassStage scene="sunset" style={{ height: 280 }}>
+      <GlassSegmentedControl
+        value={selected}
+        onChange={(idx) => setSelected(idx)}
+        options={[
+          { id: 'years', label: 'Years' },
+          { id: 'months', label: 'Months' },
+          { id: 'days', label: 'Days' },
+          { id: 'all', label: 'All Photos' },
+        ]}
       />
-      {options.map((label, idx) => (
-        <button
-          key={label}
-          role="tab"
-          aria-selected={selected === idx}
-          onClick={() => setSelected(idx)}
-          className="relative z-10 px-4 py-2 text-xs font-semibold text-white"
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    </GlassStage>
   );
 }`,
   },
@@ -505,25 +471,30 @@ export function LiquidSegmented({ options }: { options: string[] }) {
 .lg-toolbar-pill button:hover { background: rgba(255,255,255,0.18); }
 .lg-toolbar-pill .divider { width: 1px; height: 18px; background: rgba(255,255,255,0.26); }
 </style>`,
-    react: `export function LiquidButton({
-  children,
-  prominent = false,
-  onClick,
-}: {
-  children: React.ReactNode;
-  prominent?: boolean;
-  onClick?: () => void;
-}) {
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { GlassStage, GlassButton, GlassButtonGroup, GlassIconButton } from 'glasskit-liquid-glass';
+import { Play, Sparkles, Heart, Bookmark, Share, Plus } from 'lucide-react';
+
+export function ButtonsExample() {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={\`liquid-glass inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white transition-transform active:scale-95 \${
-        prominent ? 'bg-[#007AFF]/70' : ''
-      }\`}
-    >
-      {children}
-    </button>
+    <GlassStage scene="tahoe" style={{ height: 300 }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <GlassButton variant="clear" icon={<Play size={16} fill="currentColor" />}>
+          Play Preview
+        </GlassButton>
+        <GlassButton variant="prominent" icon={<Sparkles size={16} />}>
+          Get GlassKit
+        </GlassButton>
+        <GlassButtonGroup
+          actions={[
+            { id: 'like', ariaLabel: 'Favorite', icon: <Heart size={18} /> },
+            { id: 'save', ariaLabel: 'Bookmark', icon: <Bookmark size={18} /> },
+            { id: 'share', ariaLabel: 'Share', icon: <Share size={18} /> },
+          ]}
+        />
+        <GlassIconButton aria-label="Add"><Plus size={20} /></GlassIconButton>
+      </div>
+    </GlassStage>
   );
 }`,
   },
@@ -588,28 +559,39 @@ export function LiquidSegmented({ options }: { options: string[] }) {
   font-size: 18px;
 }
 </style>`,
-    react: `import { useState } from 'react';
-import { Sun } from 'lucide-react';
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { useState } from 'react';
+import { GlassStage, GlassControlCenter } from 'glasskit-liquid-glass';
+import { Wifi, Bluetooth, Radio, Plane, Sun, Volume2, Moon } from 'lucide-react';
 
-export function VerticalGlassSlider() {
-  const [value, setValue] = useState(72);
+export function ControlCenterExample() {
+  const [wifi, setWifi] = useState(true);
+  const [brightness, setBrightness] = useState(74);
+  const [volume, setVolume] = useState(56);
+  const [focus, setFocus] = useState(false);
 
   return (
-    <div
-      className="liquid-glass relative h-40 w-16 cursor-ns-resize overflow-hidden rounded-[26px]"
-      onPointerMove={(e) => {
-        if (e.buttons !== 1) return;
-        const rect = e.currentTarget.getBoundingClientRect();
-        const pct = ((rect.bottom - e.clientY) / rect.height) * 100;
-        setValue(Math.max(5, Math.min(100, Math.round(pct))));
-      }}
-    >
-      <div
-        className="absolute inset-x-0 bottom-0 bg-white/90 transition-[height]"
-        style={{ height: \`\${value}%\` }}
+    <GlassStage scene="sunset" style={{ height: 380 }}>
+      <GlassControlCenter
+        orbs={[
+          { id: 'air', label: 'Airplane', icon: <Plane size={20} />, active: false, tone: 'orange', onToggle: () => {} },
+          { id: 'wifi', label: 'Wi-Fi', icon: <Wifi size={20} />, active: wifi, tone: 'blue', onToggle: () => setWifi((v) => !v) },
+          { id: 'bt', label: 'Bluetooth', icon: <Bluetooth size={20} />, active: true, tone: 'blue', onToggle: () => {} },
+          { id: 'drop', label: 'AirDrop', icon: <Radio size={20} />, active: true, tone: 'green', onToggle: () => {} },
+        ]}
+        sliders={[
+          { ariaLabel: 'Brightness', value: brightness, onChange: setBrightness, icon: <Sun size={20} /> },
+          { ariaLabel: 'Volume', value: volume, onChange: setVolume, icon: <Volume2 size={20} /> },
+        ]}
+        focus={{
+          title: 'Do Not Disturb',
+          subtitle: focus ? 'On until 7:00 PM' : 'Off',
+          icon: <Moon size={16} />,
+          active: focus,
+          onToggle: () => setFocus((v) => !v),
+        }}
       />
-      <Sun size={20} className="absolute bottom-3.5 left-1/2 -translate-x-1/2 text-neutral-800" />
-    </div>
+    </GlassStage>
   );
 }`,
   },
@@ -651,32 +633,29 @@ export function VerticalGlassSlider() {
 .media-controls { display: flex; justify-content: center; gap: 24px; margin-top: 12px; }
 .media-controls button { border: 0; background: none; color: #fff; font-size: 18px; cursor: pointer; }
 </style>`,
-    react: `import { useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { GlassStage, GlassMediaPlayer } from 'glasskit-liquid-glass';
 
-export function NowPlayingGlass() {
-  const [playing, setPlaying] = useState(true);
-
+export function MediaPlayerExample() {
   return (
-    <div className="liquid-glass w-80 rounded-[30px] p-5 text-white">
-      <div className="flex items-center gap-3.5">
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-sky-400 via-indigo-500 to-pink-500 shadow-lg" />
-        <div>
-          <p className="text-sm font-semibold">Midnight Refraction</p>
-          <p className="text-xs text-white/70">Cupertino Ensemble</p>
-        </div>
-      </div>
-      <div className="mt-5 flex items-center justify-center gap-6">
-        <button aria-label="Previous"><SkipBack size={20} fill="currentColor" /></button>
-        <button
-          onClick={() => setPlaying((p) => !p)}
-          className="grid h-11 w-11 place-items-center rounded-full bg-white/20"
-        >
-          {playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-        </button>
-        <button aria-label="Next"><SkipForward size={20} fill="currentColor" /></button>
-      </div>
-    </div>
+    <GlassStage backgroundImage="/your-wallpaper.jpg" style={{ height: 400 }}>
+      <GlassMediaPlayer
+        tracks={[
+          {
+            title: 'Old Scratch Blues',
+            artist: 'Jack White',
+            duration: 173,
+            artworkGradient: 'linear-gradient(135deg, #34d399, #0ea5e9, #1d4ed8)',
+          },
+          {
+            title: 'Specular Drift',
+            artist: 'Solstice Radio',
+            duration: 242,
+            artworkGradient: 'linear-gradient(135deg, #fb923c, #f43f5e, #a855f7)',
+          },
+        ]}
+      />
+    </GlassStage>
   );
 }`,
   },
@@ -718,26 +697,25 @@ export function NowPlayingGlass() {
 .ctx-menu .danger { color: #ff3b30; }
 .ctx-menu kbd { font-size: 12px; opacity: 0.6; font-family: inherit; }
 </style>`,
-    react: `export function LiquidContextMenu() {
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { GlassStage, GlassContextMenu } from 'glasskit-liquid-glass';
+import { Copy, Share, Star, Edit3, Trash2 } from 'lucide-react';
+
+export function ContextMenuExample() {
   return (
-    <div className="liquid-glass w-64 rounded-3xl p-2 text-sm" role="menu">
-      <div className="grid grid-cols-3 gap-1 pb-1.5">
-        {['Copy', 'Share', 'Star'].map((act) => (
-          <button key={act} className="rounded-xl bg-white/20 py-2 text-xs font-semibold hover:bg-white/30">
-            {act}
-          </button>
-        ))}
-      </div>
-      <div className="my-1 h-px bg-black/10" />
-      <button role="menuitem" className="flex w-full justify-between rounded-xl px-3 py-2 hover:bg-white/25">
-        <span>Rename</span>
-        <kbd className="opacity-60">⌘R</kbd>
-      </button>
-      <button role="menuitem" className="flex w-full justify-between rounded-xl px-3 py-2 text-red-500 hover:bg-red-500/15">
-        <span>Delete</span>
-        <kbd className="opacity-60">⌫</kbd>
-      </button>
-    </div>
+    <GlassStage scene="light" tone="light" style={{ height: 380 }}>
+      <GlassContextMenu
+        quickActions={[
+          { id: 'copy', label: 'Copy', icon: <Copy size={16} /> },
+          { id: 'share', label: 'Share', icon: <Share size={16} /> },
+          { id: 'star', label: 'Star', icon: <Star size={16} /> },
+        ]}
+        items={[
+          { id: 'rename', label: 'Rename', icon: <Edit3 size={15} />, shortcut: '⌘R' },
+          { id: 'delete', label: 'Delete', icon: <Trash2 size={15} />, shortcut: '⌫', destructive: true, dividerBefore: true },
+        ]}
+      />
+    </GlassStage>
   );
 }`,
   },
@@ -778,28 +756,27 @@ export function NowPlayingGlass() {
 .notif-row time { opacity: 0.65; font-size: 12px; }
 .notif-body p { margin: 3px 0 0; font-size: 13px; opacity: 0.88; line-height: 1.35; }
 </style>`,
-    react: `export function NotificationBanner({
-  title,
-  body,
-  time = 'now',
-}: {
-  title: string;
-  body: string;
-  time?: string;
-}) {
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { useState } from 'react';
+import { GlassStage, GlassNotificationStack } from 'glasskit-liquid-glass';
+
+const INITIAL = [
+  { id: '1', title: 'Maya Lin', body: 'The new optical glass prototype feels unreal.', time: 'now' },
+  { id: '2', title: 'Design Critique', body: 'Starting in 10 minutes in Studio B.', time: '4m ago' },
+];
+
+export function NotificationStackExample() {
+  const [items, setItems] = useState(INITIAL);
+
   return (
-    <div className="liquid-glass flex max-w-sm items-center gap-3 rounded-3xl p-4 text-white">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#34C759] font-semibold">
-        M
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between text-sm font-semibold">
-          <span>{title}</span>
-          <span className="text-xs font-normal text-white/65">{time}</span>
-        </div>
-        <p className="mt-0.5 text-xs leading-relaxed text-white/85">{body}</p>
-      </div>
-    </div>
+    <GlassStage scene="tahoe" style={{ height: 360 }}>
+      <GlassNotificationStack
+        items={items}
+        onDismiss={(id) => setItems((prev) => prev.filter((i) => i.id !== id))}
+        canRestore={items.length < INITIAL.length}
+        onRestore={() => setItems(INITIAL)}
+      />
+    </GlassStage>
   );
 }`,
   },
@@ -836,28 +813,22 @@ export function NowPlayingGlass() {
 .btn-muted { background: rgba(120,120,128,0.22); color: inherit; }
 .btn-blue { background: #007AFF; color: #fff; }
 </style>`,
-    react: `export function LiquidAlertDialog({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { GlassStage, GlassAlertSheet } from 'glasskit-liquid-glass';
+import { CloudUpload } from 'lucide-react';
+
+export function AlertDialogExample() {
   return (
-    <div className="liquid-glass w-80 rounded-[32px] p-6 text-center" role="dialog">
-      <h3 className="text-base font-bold">Publish Design Tokens?</h3>
-      <p className="mt-2 text-xs leading-relaxed opacity-80">
-        Updates to refraction curves and corner radii will apply immediately.
-      </p>
-      <div className="mt-5 grid grid-cols-2 gap-2.5">
-        <button onClick={onCancel} className="rounded-full bg-black/10 py-2.5 text-sm font-semibold">
-          Not Now
-        </button>
-        <button onClick={onConfirm} className="rounded-full bg-[#007AFF] py-2.5 text-sm font-semibold text-white">
-          Publish
-        </button>
-      </div>
-    </div>
+    <GlassStage scene="light" tone="light" style={{ height: 360 }}>
+      <GlassAlertSheet
+        icon={<CloudUpload size={26} />}
+        title="Publish Design Tokens?"
+        description="Updates to refraction curves and corner radii will apply immediately across connected apps."
+        secondaryLabel="Not Now"
+        primaryLabel="Publish"
+        onPrimary={() => console.log('Published!')}
+      />
+    </GlassStage>
   );
 }`,
   },
@@ -899,34 +870,23 @@ export function NowPlayingGlass() {
   transform: translateY(-10px) scale(1.32);
 }
 </style>`,
-    react: `import { useState } from 'react';
+    react: `import 'glasskit-liquid-glass/styles.css';
+import { GlassStage, GlassDock } from 'glasskit-liquid-glass';
 
-export function MacLiquidDock({ apps }: { apps: { id: string; label: string; color: string }[] }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-
+export function MacDockExample() {
   return (
-    <div
-      className="liquid-glass inline-flex items-end gap-2.5 rounded-[26px] px-3.5 py-2.5"
-      onMouseLeave={() => setHovered(null)}
-    >
-      {apps.map((app, i) => {
-        const dist = hovered === null ? 99 : Math.abs(hovered - i);
-        const scale = dist === 0 ? 1.36 : dist === 1 ? 1.16 : 1;
-        return (
-          <button
-            key={app.id}
-            onMouseEnter={() => setHovered(i)}
-            style={{
-              background: app.color,
-              transform: \`translateY(\${(scale - 1) * -16}px) scale(\${scale})\`,
-            }}
-            className="h-12 w-12 rounded-xl text-white shadow-lg transition-transform duration-200"
-          >
-            {app.label[0]}
-          </button>
-        );
-      })}
-    </div>
+    <GlassStage backgroundImage="/your-wallpaper.jpg" style={{ height: 280 }}>
+      <GlassDock
+        items={[
+          { id: 'finder', name: 'Finder', icon: <img src="/icons/finder.png" width={42} height={42} alt="" />, running: true },
+          { id: 'safari', name: 'Safari', icon: <img src="/icons/safari.png" width={42} height={42} alt="" />, running: true },
+          { id: 'music', name: 'Music', icon: <img src="/icons/music.png" width={42} height={42} alt="" /> },
+        ]}
+        utilityItems={[
+          { id: 'trash', name: 'Trash', icon: <img src="/icons/trash.png" width={42} height={42} alt="" /> },
+        ]}
+      />
+    </GlassStage>
   );
 }`,
   },

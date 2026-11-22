@@ -146,6 +146,13 @@ const GlassKitShell: React.FC = () => {
     }
   }, [settings.siteTheme]);
 
+  // Keep page title synced with active route
+  useEffect(() => {
+    if (route === 'home') {
+      document.title = 'GlassKit v2.0 — Apple iOS 26 & macOS Tahoe Liquid Glass UI Library';
+    }
+  }, [route]);
+
   // Sync browser Back / Forward navigation between "/" and "/docs"
   useEffect(() => {
     const onPopState = () => {
@@ -159,7 +166,13 @@ const GlassKitShell: React.FC = () => {
 
   const navigateTo = (targetRoute: AppRoute, sectionId?: string, navId?: NavSectionId) => {
     const nextUrl =
-      targetRoute === 'docs' ? '/docs' : sectionId ? `/#${sectionId}` : '/';
+      targetRoute === 'docs'
+        ? sectionId
+          ? `/docs#${sectionId}`
+          : '/docs'
+        : sectionId
+        ? `/#${sectionId}`
+        : '/';
 
     if (window.location.pathname + window.location.hash !== nextUrl) {
       window.history.pushState({}, '', nextUrl);
@@ -245,9 +258,9 @@ const GlassKitShell: React.FC = () => {
     });
   }, [selectedCategory, searchQuery]);
 
-  const copyQuickCss = async () => {
+  const copyQuickInstall = async () => {
     try {
-      await navigator.clipboard.writeText(CORE_ENGINE_CSS);
+      await navigator.clipboard.writeText('npm install glasskit-liquid-glass');
       setNavCopied(true);
       setTimeout(() => setNavCopied(false), 1600);
     } catch {
@@ -257,15 +270,12 @@ const GlassKitShell: React.FC = () => {
 
   return (
     <div className={`page-shell theme-${settings.siteTheme}`}>
-      {/* Subtle static ambient studio aura behind hero (0% GPU animation cost) */}
       <div className="studio-ambient-glow" aria-hidden="true" />
 
-      {/* Scroll-reactive optical progress hairline */}
       <div className="scroll-progress-track" aria-hidden="true">
         <div ref={progressRef} className="scroll-progress-bar" />
       </div>
 
-      {/* Sticky Top Header — sits cleanly above Hero on load; center matte pill stays visible on scroll */}
       <header className={`studio-navbar-wrap ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="studio-navbar">
           <a
@@ -276,8 +286,9 @@ const GlassKitShell: React.FC = () => {
               navigateTo('home', 'optical-lab', 'showcase');
             }}
           >
-            <img src="/logo.jpg" alt="" className="brand-logo-mark" width={30} height={30} />
+            <img src="/logo-icon.png" alt="" className="brand-logo-mark" width={30} height={30} />
             <span className="brand-word">GlassKit</span>
+            <span className="brand-version-badge">v2.0</span>
           </a>
 
           <div className="navbar-center-slot">
@@ -353,9 +364,14 @@ const GlassKitShell: React.FC = () => {
               {settings.siteTheme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
             </button>
 
-            <button type="button" className="nav-cta-pill" onClick={copyQuickCss}>
+            <button
+              type="button"
+              className="nav-cta-pill"
+              onClick={copyQuickInstall}
+              title="Copy npm install command"
+            >
               {navCopied ? <Check size={13} /> : <Copy size={13} />}
-              <span>{navCopied ? 'Copied' : 'Copy CSS'}</span>
+              <span>{navCopied ? 'Copied' : 'Install'}</span>
             </button>
           </div>
         </div>
@@ -368,10 +384,8 @@ const GlassKitShell: React.FC = () => {
           />
         ) : (
           <>
-            {/* Flagship Full-HD Interactive Liquid Glass Showcase */}
-            <HeroWebGLStage />
+            <HeroWebGLStage onOpenDocs={() => navigateTo('docs', 'setup', 'docs')} />
 
-            {/* Curated Component Library */}
             <section id="components" className="library-section">
               <ScrollReveal>
                 <div className="library-head-bar">
@@ -454,16 +468,14 @@ const GlassKitShell: React.FC = () => {
               )}
             </section>
 
-            {/* Drop-in Engine Snippets */}
             <ScrollReveal>
               <section id="quick-setup" className="setup-section setup-section-home">
                 <div className="setup-header">
                   <div>
                     <h3>Drop-in Engine</h3>
                     <p>
-                      Copy the CSS material for lightweight glass surfaces, the SVG displacement
-                      filter for Chromium DOM lensing, or the WebGL2 GLSL shader for cross-browser
-                      physical Snell refraction and chromatic dispersion.
+                      Install the React library via npm, or grab the zero-dependency CSS material,
+                      SVG displacement filter, or WebGL2 GLSL shader directly below.
                     </p>
                   </div>
                 </div>
@@ -488,10 +500,10 @@ const GlassKitShell: React.FC = () => {
         <div className="footer-inner">
           <div className="footer-left">
             <span className="footer-brand-wrap">
-              <img src="/logo.jpg" alt="" className="footer-logo-mark" width={22} height={22} />
+              <img src="/logo-icon.png" alt="" className="footer-logo-mark" width={22} height={22} />
               <span className="footer-brand">GlassKit</span>
             </span>
-            <span>Apple iOS 26 &amp; macOS Tahoe optical interface components.</span>
+            <span>v2.0 · Apple iOS 26 &amp; macOS Tahoe optical interface library.</span>
           </div>
           <a
             href="https://github.com/shasantx/liquidglass"
