@@ -1,0 +1,46 @@
+{
+  "name": "glasskit-liquid-glass",
+  "private": false,
+  "version": "1.0.0",
+  "description": "Apple iOS 26 & macOS Tahoe Liquid Glass UI component library powered by a shared WebGL2 Snell refraction engine, SVG DOM displacement, and pure CSS fallback.",
+  "license": "MIT",
+  "author": "shasantx <https://github.com/shasantx>",
+  "homepage": "https://github.com/shasantx/liquidglass#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shasantx/liquidglass.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shasantx/liquidglass/issues"
+  },
+  "keywords": [
+    "liquid-glass",
+    "ios-26",
+    "macos-tahoe",
+    "glassmorphism",
+    "webgl2",
+    "glsl",
+    "snell-refraction",
+    "react",
+    "typescript",
+    "ui-library"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3"
+  }
+}
