@@ -8,7 +8,7 @@
   "homepage": "https://github.com/shasantx/liquidglass#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/shasantx/liquidglass.git"
+    "url": "git+https://github.com/shasantx/liquidglass.git"
   },
   "bugs": {
     "url": "https://github.com/shasantx/liquidglass/issues"
