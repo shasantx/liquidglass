@@ -45,6 +45,7 @@ export const ToggleSliderDemo: React.FC = () => {
             onPointerDown={() => setPressingToggle('spatial')}
             onPointerUp={() => setPressingToggle(null)}
             onPointerLeave={() => setPressingToggle(null)}
+            onPointerCancel={() => setPressingToggle(null)}
             onClick={() => setWifiOn((v) => !v)}
           >
             <span className="ios-liquid-thumb" />
@@ -68,6 +69,7 @@ export const ToggleSliderDemo: React.FC = () => {
             onPointerDown={() => setPressingToggle('adaptive')}
             onPointerUp={() => setPressingToggle(null)}
             onPointerLeave={() => setPressingToggle(null)}
+            onPointerCancel={() => setPressingToggle(null)}
             onClick={() => setAirdropOn((v) => !v)}
           >
             <span className="ios-liquid-thumb" />

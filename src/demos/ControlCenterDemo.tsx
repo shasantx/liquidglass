@@ -104,6 +104,9 @@ export const ControlCenterDemo: React.FC = () => {
             onPointerUp={() => {
               dragging.current = null;
             }}
+            onPointerCancel={() => {
+              dragging.current = null;
+            }}
           >
             <div className="cc-vslider-fill" style={{ height: `${brightness}%` }} />
             <div className="cc-vslider-icon">
@@ -133,6 +136,9 @@ export const ControlCenterDemo: React.FC = () => {
               }
             }}
             onPointerUp={() => {
+              dragging.current = null;
+            }}
+            onPointerCancel={() => {
               dragging.current = null;
             }}
           >

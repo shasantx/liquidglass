@@ -207,7 +207,7 @@ export const GlassStage = React.forwardRef<GlassStageHandle, GlassStageProps>(
                 const visible = entries[0]?.isIntersecting ?? false;
                 inViewRef.current = visible;
                 if (visible) {
-                  requestBurst(140);
+                  requestBurst(820);
                 } else if (rafRef.current) {
                   cancelAnimationFrame(rafRef.current);
                   rafRef.current = 0;
@@ -239,13 +239,16 @@ export const GlassStage = React.forwardRef<GlassStageHandle, GlassStageProps>(
       const unsubAsset = sharedGlassEngine.onAssetLoaded(() => requestFrame());
 
       const onTransitionStart = () => requestBurst(540);
+      const onOrientation = () => requestBurst(420);
       stageEl.addEventListener('transitionstart', onTransitionStart);
+      window.addEventListener('orientationchange', onOrientation);
 
       return () => {
         io?.disconnect();
         ro.disconnect();
         unsubAsset();
         stageEl.removeEventListener('transitionstart', onTransitionStart);
+        window.removeEventListener('orientationchange', onOrientation);
         document.removeEventListener('visibilitychange', onVis);
         if (rafRef.current) {
           cancelAnimationFrame(rafRef.current);

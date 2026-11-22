@@ -33,8 +33,8 @@ const LiquidGlassInner: React.FC<LiquidGlassProps> = ({
   specular,
   variant = 'clear',
   interactive = true,
-  onMouseMove,
-  onMouseLeave,
+  onPointerMove,
+  onPointerLeave,
   ...rest
 }) => {
   const id = useId();
@@ -76,9 +76,9 @@ const LiquidGlassInner: React.FC<LiquidGlassProps> = ({
     stage.updateMeta(id, { radius, variant, bezelWidth });
   }, [id, stage, useGpuStage, radius, variant, bezelWidth]);
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (interactive && containerRef.current) {
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (interactive && e.pointerType === 'mouse' && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / Math.max(1, rect.width)));
         const ny = Math.max(0, Math.min(1, (e.clientY - rect.top) / Math.max(1, rect.height)));
@@ -90,13 +90,13 @@ const LiquidGlassInner: React.FC<LiquidGlassProps> = ({
           containerRef.current.style.setProperty('--lg-pointer-alpha', '1');
         }
       }
-      onMouseMove?.(e);
+      onPointerMove?.(e);
     },
-    [id, interactive, onMouseMove, stage, useGpuStage]
+    [id, interactive, onPointerMove, stage, useGpuStage]
   );
 
-  const handleMouseLeave = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerLeave = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
       if (interactive) {
         if (useGpuStage && stage) {
           stage.updateMeta(id, { pointerAlpha: 0 });
@@ -104,9 +104,9 @@ const LiquidGlassInner: React.FC<LiquidGlassProps> = ({
           containerRef.current.style.setProperty('--lg-pointer-alpha', '0');
         }
       }
-      onMouseLeave?.(e);
+      onPointerLeave?.(e);
     },
-    [id, interactive, onMouseLeave, stage, useGpuStage]
+    [id, interactive, onPointerLeave, stage, useGpuStage]
   );
 
   const effSpecular = specular ?? settings.specular;
@@ -119,8 +119,8 @@ const LiquidGlassInner: React.FC<LiquidGlassProps> = ({
       <div
         ref={containerRef}
         className={`lg-surface-gpu lg-variant-${variant} ${className}`}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
         style={{
           borderRadius: `${radius}px`,
           ...style,
@@ -137,8 +137,8 @@ const LiquidGlassInner: React.FC<LiquidGlassProps> = ({
     <div
       ref={containerRef}
       className={`lg-surface lg-variant-${variant} ${className}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
       style={
         {
           borderRadius: `${radius}px`,

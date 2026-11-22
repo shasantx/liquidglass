@@ -140,6 +140,10 @@ const GlassKitShell: React.FC = () => {
     const bg = settings.siteTheme === 'dark' ? '#05060a' : '#f4f5f8';
     document.documentElement.style.background = bg;
     document.body.style.background = bg;
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute('content', bg);
+    }
   }, [settings.siteTheme]);
 
   // Sync browser Back / Forward navigation between "/" and "/docs"
@@ -195,7 +199,8 @@ const GlassKitShell: React.FC = () => {
       raf = requestAnimationFrame(() => {
         raf = 0;
         const y = window.scrollY;
-        setScrolled(y > 42);
+        const threshold = window.innerWidth <= 820 ? 58 : 42;
+        setScrolled(y > threshold);
         if (progressRef.current) {
           const docH = document.documentElement.scrollHeight - window.innerHeight;
           const pct = docH > 0 ? Math.max(0, Math.min(1, y / docH)) : 0;
@@ -271,6 +276,7 @@ const GlassKitShell: React.FC = () => {
               navigateTo('home', 'optical-lab', 'showcase');
             }}
           >
+            <img src="/logo.jpg" alt="" className="brand-logo-mark" width={30} height={30} />
             <span className="brand-word">GlassKit</span>
           </a>
 
@@ -481,7 +487,10 @@ const GlassKitShell: React.FC = () => {
       <footer className="site-footer">
         <div className="footer-inner">
           <div className="footer-left">
-            <span className="footer-brand">GlassKit</span>
+            <span className="footer-brand-wrap">
+              <img src="/logo.jpg" alt="" className="footer-logo-mark" width={22} height={22} />
+              <span className="footer-brand">GlassKit</span>
+            </span>
             <span>Apple iOS 26 &amp; macOS Tahoe optical interface components.</span>
           </div>
           <a

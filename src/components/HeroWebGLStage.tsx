@@ -138,7 +138,18 @@ export const HeroWebGLStage: React.FC = () => {
   };
 
   useEffect(() => {
+    const onViewportResize = () => {
+      if (cardTargetRef.current.x !== 0 || cardTargetRef.current.y !== 0) {
+        cardTargetRef.current = { x: 0, y: 0 };
+        wakeMotion();
+      }
+      stageHandleRef.current?.requestBurst(240);
+    };
+    window.addEventListener('resize', onViewportResize, { passive: true });
+    window.addEventListener('orientationchange', onViewportResize);
     return () => {
+      window.removeEventListener('resize', onViewportResize);
+      window.removeEventListener('orientationchange', onViewportResize);
       if (animRafRef.current) cancelAnimationFrame(animRafRef.current);
     };
   }, []);
@@ -151,7 +162,7 @@ export const HeroWebGLStage: React.FC = () => {
   }, [heroMode]);
 
   const handleStagePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (draggingCardRef.current) return;
+    if (draggingCardRef.current || e.pointerType === 'touch') return;
     const rect = e.currentTarget.getBoundingClientRect();
     const nx = Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / Math.max(1, rect.width)));
     const ny = Math.max(0.08, Math.min(0.92, 1 - (e.clientY - rect.top) / Math.max(1, rect.height)));
@@ -184,8 +195,13 @@ export const HeroWebGLStage: React.FC = () => {
   const onCardPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!draggingCardRef.current) return;
     const wrap = heroWrapRef.current;
-    const maxX = wrap ? wrap.clientWidth * 0.28 : 240;
-    const maxY = wrap ? wrap.clientHeight * 0.24 : 110;
+    const card = dragElRef.current;
+    const stageW = wrap ? wrap.clientWidth : 800;
+    const stageH = wrap ? Math.min(wrap.clientHeight, 620) : 480;
+    const cardW = card ? card.offsetWidth : 340;
+    const cardH = card ? card.offsetHeight : 220;
+    const maxX = Math.max(14, Math.min(stageW * 0.28, (stageW - cardW) * 0.5 - 8));
+    const maxY = Math.max(18, Math.min(stageH * 0.22, (stageH - cardH) * 0.32));
     const nx = Math.max(-maxX, Math.min(maxX, dragStartRef.current.ox + (e.clientX - dragStartRef.current.px)));
     const ny = Math.max(-maxY, Math.min(maxY, dragStartRef.current.oy + (e.clientY - dragStartRef.current.py)));
     cardTargetRef.current = { x: nx, y: ny };
@@ -317,7 +333,10 @@ export const HeroWebGLStage: React.FC = () => {
 
           <div className="hero-stage-hint" aria-hidden="true">
             <Move size={13} />
-            <span>Drag card to refract · Hover stage to fuse liquid droplet</span>
+            <span>
+              Drag card to refract
+              <span className="hero-hint-desktop"> · Hover stage to fuse liquid droplet</span>
+            </span>
           </div>
         </GlassStage>
 

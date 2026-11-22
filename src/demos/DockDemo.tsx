@@ -91,7 +91,9 @@ export const DockDemo: React.FC = () => {
         className={`dock-item ${bouncingId === app.id ? 'is-bouncing' : ''} ${
           app.hideOnCompact ? 'dock-item-optional' : ''
         } ${app.hideOnMobile ? 'dock-item-mobile-hide' : ''}`}
-        onMouseEnter={() => setHoveredIdx(globalIdx)}
+        onPointerEnter={(e) => {
+          if (e.pointerType === 'mouse') setHoveredIdx(globalIdx);
+        }}
         onClick={() => launchApp(app.id)}
         aria-label={app.name}
         style={{
@@ -119,7 +121,9 @@ export const DockDemo: React.FC = () => {
       <LiquidGlass radius={22} bezelWidth={12} variant="clear" className="macos-dock-shell">
         <div
           className="macos-dock-row"
-          onMouseLeave={() => setHoveredIdx(null)}
+          onPointerLeave={(e) => {
+            if (e.pointerType === 'mouse') setHoveredIdx(null);
+          }}
         >
           {PRIMARY_DOCK_APPS.map((app, idx) => renderDockButton(app, idx))}
           <span className="dock-divider" aria-hidden="true" />
